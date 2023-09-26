@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_third_person_camera::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 mod player;
 mod camera;
@@ -16,7 +17,8 @@ fn main() {
             PlayerPlugin, 
             CameraPlugin, 
             WorldPlugin,
-            ThirdPersonCameraPlugin))
+            ThirdPersonCameraPlugin,
+            WorldInspectorPlugin::new()))
         .run();
 }
 
