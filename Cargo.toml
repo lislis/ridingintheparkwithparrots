@@ -9,6 +9,7 @@ edition = "2021"
 #bevy = "0.11.2"
 # switch before release build
 bevy = { version = "0.11.2", features = ["dynamic_linking"] }
+bevy_third_person_camera = "0.1.5"
 
 
 # Enable a small amount of optimization in debug mode

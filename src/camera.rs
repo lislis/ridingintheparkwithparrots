@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_third_person_camera::*;
 
 pub struct CameraPlugin;
 
@@ -9,10 +10,17 @@ impl Plugin for CameraPlugin {
 }
 
 fn spawn_camera(mut commands: Commands) {
-    let camera = Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0)
-            .looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    };
+    let camera = (
+        Camera3dBundle {
+            transform: Transform::from_xyz(-2.0, 2.5, 5.0)
+                .looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        },
+        ThirdPersonCamera {
+            mouse_sensitivity: 3.0,
+            zoom: Zoom::new(4.0, 8.0),
+            ..default()
+        }
+    );
     commands.spawn(camera);
 }
