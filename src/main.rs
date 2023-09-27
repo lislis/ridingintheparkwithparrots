@@ -192,9 +192,9 @@ fn camera_controls(
 
 fn what_is_selected(selection: Query<(&Name, &PickSelection)>) {
     for (name, selection) in &selection {
-        info!("{:?} is selected: {:?}", name, selection);
-        // if selection.is_selected {
-        //     info!("HEllo {:?} is selected: {:?}", name, selection);
-        // }
+        //info!("{:?} is selected: {:?}", name, selection);
+        if selection.is_selected {
+            info!("HEllo {:?} is selected: {:?}", name, selection);
+        }
     }
 }
