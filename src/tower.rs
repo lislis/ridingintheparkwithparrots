@@ -19,7 +19,7 @@ impl Plugin for TowerPlugin {
 
 fn tower_shooting(
     mut commands: Commands,
-    bullet_assets: Res<GameAssets>,
+    game_assets: Res<GameAssets>,
     mut towers: Query<(Entity, &mut Tower, &GlobalTransform)>,
     targets: Query<&GlobalTransform, With<Target>>,
     time: Res<Time>
@@ -39,7 +39,7 @@ fn tower_shooting(
             if let Some(direction) = direction {
                 commands.entity(tower_ent).with_children(|commands| {
                     let bullet = (SceneBundle {
-                        scene: bullet_assets.bullet_scene.clone(),
+                        scene: game_assets.tomato_scene.clone(),
                         //mesh: meshes.add(Mesh::from(shape::Cube::new(0.1))),
                         //material: materials.add(Color::rgb(0.87, 0.44, 0.42).into()),
                         transform: Transform::from_translation(tower.bullet_offset),
