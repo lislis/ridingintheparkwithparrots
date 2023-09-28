@@ -42,11 +42,14 @@ fn main() {
         //    ThirdPersonCameraPlugin,
             WorldInspectorPlugin::new()
         ))
-        .add_plugins(DefaultPickingPlugins)
+        .add_plugins(DefaultPickingPlugins
+            .build()
+            .disable::<DebugPickingPlugin>())
         .add_systems(PreStartup, asset_loading)
         .add_systems(Startup, (spawn_camera, spawn_basic_scene))
         .add_systems(Update, camera_controls)
         .add_systems(Update, what_is_selected)
+        .add_systems(Startup, create_ui)
         .add_plugins((TowerPlugin, TargetPlugin, BulletPlugin))
         .run();
 }
@@ -197,4 +200,57 @@ fn what_is_selected(selection: Query<(&Name, &PickSelection)>) {
             info!("HEllo {:?} is selected: {:?}", name, selection);
         }
     }
+}
+
+fn create_ui(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>
+) {
+    let button_icons = [
+      asset_server.load("tomato_tower.png"),
+      asset_server.load("potato_tower.png"),
+      asset_server.load("cabbage_tower.png"),
+    ];
+    let towers = [TowerType::Tomato, TowerType::Potato, TowerType::Cabbage];
+    commands.spawn((
+        NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            background_color: Color::NONE.into(),
+            ..default()
+        }, 
+        TowerUIRoot)
+    ).with_children(|commands| {
+        for i in 0..3 {
+            commands.spawn((
+                ButtonBundle {
+                    style: Style {
+                        width: Val::Percent(15.0 * 9.0 / 16.0),
+                        height: Val::Percent(15.0),
+                        align_self: AlignSelf::FlexStart,
+                        margin: UiRect::all(Val::Percent((2.0))),
+                        ..default()
+                    },
+                    image: button_icons[i].clone().into(),
+                    ..default()
+                }, 
+                towers[i]
+                )
+            );
+        }
+    });
+}
+
+#[derive(Component)]
+pub struct TowerUIRoot;
+
+#[derive(Component, Clone, Copy, Debug)]
+pub enum TowerType {
+    Tomato,
+    Potato,
+    Cabbage
 }
