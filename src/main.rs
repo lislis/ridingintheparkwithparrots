@@ -48,8 +48,7 @@ fn main() {
         .add_systems(PreStartup, asset_loading)
         .add_systems(Startup, (spawn_camera, spawn_basic_scene))
         .add_systems(Update, camera_controls)
-        .add_systems(Update, what_is_selected)
-        .add_systems(Startup, create_ui)
+        //.add_systems(Update, what_is_selected)
         .add_plugins((TowerPlugin, TargetPlugin, BulletPlugin))
         .run();
 }
@@ -142,7 +141,11 @@ fn asset_loading(mut commands: Commands, assets: Res<AssetServer>) {
     commands.insert_resource(GameAssets {
         tower_base_scene: assets.load("TowerBase.glb#Scene0"),
         tomato_tower_scene: assets.load("TomatoTower.glb#Scene0"),
+        potato_tower_scene: assets.load("PotatoTower.glb#Scene0"),
+        cabbage_tower_scene: assets.load("CabbageTower.glb#Scene0"),
         tomato_scene: assets.load("Tomato.glb#Scene0"),
+        potato_scene: assets.load("Potato.glb#Scene0"),
+        cabbage_scene: assets.load("Cabbage.glb#Scene0"),
         target_scene: assets.load("Target.glb#Scene0"),
     });
 }
@@ -151,7 +154,11 @@ fn asset_loading(mut commands: Commands, assets: Res<AssetServer>) {
 pub struct GameAssets {
     tower_base_scene: Handle<Scene>,
     tomato_tower_scene: Handle<Scene>,
+    potato_tower_scene: Handle<Scene>,
+    cabbage_tower_scene: Handle<Scene>,
     tomato_scene: Handle<Scene>,
+    potato_scene: Handle<Scene>,
+    cabbage_scene: Handle<Scene>,
     target_scene: Handle<Scene>
 }
 
@@ -202,55 +209,5 @@ fn what_is_selected(selection: Query<(&Name, &PickSelection)>) {
     }
 }
 
-fn create_ui(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>
-) {
-    let button_icons = [
-      asset_server.load("tomato_tower.png"),
-      asset_server.load("potato_tower.png"),
-      asset_server.load("cabbage_tower.png"),
-    ];
-    let towers = [TowerType::Tomato, TowerType::Potato, TowerType::Cabbage];
-    commands.spawn((
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            background_color: Color::NONE.into(),
-            ..default()
-        }, 
-        TowerUIRoot)
-    ).with_children(|commands| {
-        for i in 0..3 {
-            commands.spawn((
-                ButtonBundle {
-                    style: Style {
-                        width: Val::Percent(15.0 * 9.0 / 16.0),
-                        height: Val::Percent(15.0),
-                        align_self: AlignSelf::FlexStart,
-                        margin: UiRect::all(Val::Percent((2.0))),
-                        ..default()
-                    },
-                    image: button_icons[i].clone().into(),
-                    ..default()
-                }, 
-                towers[i]
-                )
-            );
-        }
-    });
-}
 
-#[derive(Component)]
-pub struct TowerUIRoot;
 
-#[derive(Component, Clone, Copy, Debug)]
-pub enum TowerType {
-    Tomato,
-    Potato,
-    Cabbage
-}
