@@ -1,93 +1,122 @@
 use bevy::prelude::*;
-use bevy_third_person_camera::*;
+//use bevy_third_person_camera::*;
+
+use crate::*;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct PlayerInfo {
+    pub balance: f32,
+}
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Player;
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(Startup, spawn_player)
-            .add_systems(Update, player_movement);
+        .register_type::<Player>()
+        .register_type::<PlayerInfo>()
+        .add_systems(OnEnter(GameState::Gameplay), spawn_player)
+        .add_systems(Update, log_player_balance.run_if(in_state(GameState::Gameplay)))
+        .add_systems(Update, camera_controls.run_if(in_state(GameState::Gameplay)));
     }
 }
 
-#[derive(Component)]
-struct Player;
+fn log_player_balance(
+    mut _commands: Commands,
+    player_q: Query<&PlayerInfo>
+) {
+    let player = player_q.single();
+    info!("Balance is {:?}, ", player.balance);
+}
 
-#[derive(Component)]
-struct Speed(f32);
-
-fn player_movement(
-    keys: Res<Input<KeyCode>>,
+fn camera_controls(
+    keyboard: Res<Input<KeyCode>>,
+    mut parent_q: Query<&mut Transform, With<Player>>,
     time: Res<Time>,
-    mut player_q: Query<(&mut Transform, &Speed), With<Player>>,
-    mut cam_q: Query<&Transform, (With<Camera3d>, Without<Player>)>
 ) {
-    for (mut player_transform, player_speed) in player_q.iter_mut() {
-        let cam = match cam_q.get_single() {
-            Ok(c) => c,
-            Err(e) => Err(format!("Error retrieving cameraL {}", e)).unwrap(),
-        };
-        let mut direction = Vec3::ZERO;
+    let mut player = parent_q.single_mut();
+    
+    let mut forward = player.forward();
+    forward.y = 0.0;
+    forward = forward.normalize();
 
-        // foward
-        if keys.pressed(KeyCode::W) {
-            direction += cam.forward();
-        }
+    let mut left = player.left();
+    left.y = 0.0;
+    left = left.normalize();
 
-        if keys.pressed(KeyCode::S) {
-            direction += cam.back();
-        }
+    let speed = 5.0;
+    let rotate_speed = 0.7;
+    
+    if keyboard.pressed(KeyCode::W) {
+        player.translation += forward * time.delta_seconds() * speed;
+    }
+    if keyboard.pressed(KeyCode::S) {
+        player.translation -= forward * time.delta_seconds() * speed;
+    }
+    if keyboard.pressed(KeyCode::A) {
+        player.translation += left * time.delta_seconds() * speed;
+    }
+    if keyboard.pressed(KeyCode::D) {
+        player.translation -= left * time.delta_seconds() * speed;
+    }
 
-        if keys.pressed(KeyCode::A) {
-            direction += cam.left();
-        }
-
-        if keys.pressed(KeyCode::D) {
-            direction += cam.right();
-        }
-
-        direction.y = 0.0;
-        let movement = direction.normalize_or_zero() * player_speed.0 * time.delta_seconds();
-        player_transform.translation += movement;
-
-        // rotate player to face direction of movement
-        if direction.length_squared() > 0.0 {
-            player_transform.look_to(direction, Vec3::Y);
-        }
+    if keyboard.pressed(KeyCode::Q) {
+        player.rotate_axis(Vec3::Y, rotate_speed * time.delta_seconds())
+    }
+    if keyboard.pressed(KeyCode::E) {
+        player.rotate_axis(Vec3::Y, -rotate_speed * time.delta_seconds())
     }
 }
 
-fn spawn_player(mut commands: Commands,
-    assets: Res<AssetServer>
+fn spawn_player(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    _game_assets: Res<GameAssets>,
 ) {
-    let flashlight = (
-        SpotLightBundle {
-            spot_light: SpotLight {
-                color: Color::rgba(1.0, 0.96, 0.37, 1.0),
-                intensity: 4000.0,
-                outer_angle: 0.6,
-                inner_angle: 0.5,
-                shadows_enabled: true,
-                ..default()
-            },
-            transform: Transform::from_xyz(0.0, 0.35, -0.2),
-        ..default()
-        },
-        Name::new("Flashlight")
-    );
-    let player = (
-        SceneBundle {
-            scene: assets.load("Player.gltf#Scene0"),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
-            ..default()
-        },
-        Speed(3.0),
+    let player_wrapper = (
+        SpatialBundle::from_transform(Transform::from_xyz(1.0, 1.0, 1.0)),
         Player,
-        ThirdPersonCameraTarget,
         Name::new("Player")
     );
-    commands.spawn(player).with_children(|parent| {
-        parent.spawn(flashlight);
-    }) ;
+
+    let player_info = (
+        PlayerInfo {
+            balance: 90.0
+        },
+        Name::new("PlayerInfo")
+    );
+
+    let camera_player = (
+        Camera3dBundle {
+            transform: Transform::from_xyz(0.0, 0.0, 0.0)
+                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+            ..default()
+        },
+        Name::new("PlayerCam")
+    );
+
+    let handlebar = (
+        PbrBundle {
+            mesh: meshes.add(shape::Cylinder::default().into()),
+            material: materials.add(Color::GRAY.into()),
+            transform: Transform::from_xyz(0.0,-0.3, -1.0)
+                .with_rotation(Quat::from_rotation_z(1.57))
+                .with_scale(Vec3::new(0.1, 0.8, 0.1)),
+            ..default()
+        }, 
+        NotShadowCaster,
+        Name::new("Handlebar")
+    );
+
+    commands.spawn(player_wrapper).with_children(|commands| {
+        commands.spawn(camera_player);
+        commands.spawn(player_info);
+        commands.spawn(handlebar);
+    });
 }

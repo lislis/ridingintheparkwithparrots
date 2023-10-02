@@ -11,49 +11,24 @@ pub struct StartButton;
 #[derive(Component)]
 pub struct QuitButton;
 
-#[derive(Component)]
-pub struct MenuCamera;
-
 pub struct MainMenuPlugin;
 
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::MainMenu), spawn_menu_camera)
-            .add_systems(OnEnter(GameState::MainMenu), spawn_main_menu)
-            .add_systems(OnExit(GameState::MainMenu), despawn_menu_camera)
-            .add_systems(Update, start_button_clicked.run_if(in_state(GameState::MainMenu)))
-            .add_systems(Update, quit_button_clicked.run_if(in_state(GameState::MainMenu)));
+        app.add_systems(OnEnter(GameState::MainMenu), spawn_main_menu);
+        app.add_systems(Update, start_button_clicked.run_if(in_state(GameState::MainMenu)));
+        app.add_systems(Update, quit_button_clicked.run_if(in_state(GameState::MainMenu)));
     }
-}
-
-fn spawn_menu_camera(mut commands: Commands) {
-    let camera = (
-        Camera3dBundle {
-            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
-        },
-        MenuCamera,
-        RaycastPickCamera::default()
-    );
-    commands.spawn(camera);
-}
-
-fn despawn_menu_camera(
-    mut commands: Commands,
-    camera_q: Query<(Entity, &MenuCamera)>
-) {
-    let (entity, _cam) = camera_q.single();
-    commands.entity(entity).despawn_recursive();
 }
 
 fn spawn_main_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>
 ) {
-    let start_button = spawn_button(&mut commands, &asset_server, "Start riding", Color::LIME_GREEN);
+    let start_button = spawn_button(&mut commands, &asset_server, "Start Game", Color::RED);
     commands.entity(start_button).insert(StartButton);
 
-    let quit_button = spawn_button(&mut commands, &asset_server, "Exit game", Color::NONE);
+    let quit_button = spawn_button(&mut commands, &asset_server, "Quit", Color::BLUE);
     commands.entity(quit_button).insert(QuitButton);
 
     commands.spawn((
@@ -76,14 +51,12 @@ fn spawn_main_menu(
                 style: Style {
                     align_self: AlignSelf::Center,
                     margin: UiRect::all(Val::Percent(3.0)),
-                    max_width: Val::Percent(70.0),                   
                     ..default()
                 },
-                text: Text::from_section("Riding in the park with parrots", TextStyle {
-                    font: asset_server.load("fonts/Gorditas-Bold.ttf"),
+                text: Text::from_section("Tower Defense", TextStyle {
+                    font: asset_server.load("FiraSans-Bold.ttf"),
                     font_size: 96.0,
-                    color: Color::BLACK,
-                    
+                    color: Color::BLACK
                 }),
                 ..default()
             },
@@ -102,7 +75,7 @@ fn spawn_button(
     commands
         .spawn(ButtonBundle {
             style: Style {
-                width: Val::Percent(45.0), 
+                width: Val::Percent(65.0), 
                 height: Val::Percent(15.0),
                 align_self: AlignSelf::Center,
                 justify_content: JustifyContent::Center,
@@ -122,8 +95,8 @@ fn spawn_button(
                 text: Text::from_section(
                     text,
                     TextStyle {
-                        font: asset_server.load("fonts/Gorditas-Bold.ttf"),
-                        font_size: 52.0,
+                        font: asset_server.load("FiraSans-Bold.ttf"),
+                        font_size: 64.0,
                         color: Color::BLACK,
                     },
                 ),
