@@ -1,6 +1,6 @@
-use bevy::{prelude::*, reflect, pbr::NotShadowCaster};
+use bevy::{prelude::*, pbr::NotShadowCaster};
 // use bevy_third_person_camera::*;
-use bevy_inspector_egui::{quick::WorldInspectorPlugin, bevy_inspector::hierarchy::SelectedEntities};
+use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use bevy_mod_picking::prelude::*;
 
 // mod player;
@@ -14,10 +14,12 @@ use bevy_mod_picking::prelude::*;
 mod bullet;
 mod target;
 mod tower;
+mod main_menu;
 
 pub use bullet::*;
 pub use target::*;
 pub use tower::*;
+pub use main_menu::*;
 
 pub const WIDTH: f32 = 720.0;
 pub const HEIGHT: f32 = 1280.0;
@@ -45,11 +47,14 @@ fn main() {
         .add_plugins(DefaultPickingPlugins
             .build()
             .disable::<DebugPickingPlugin>())
+        .add_state::<GameState>()
         .add_systems(PreStartup, asset_loading)
-        .add_systems(Startup, (spawn_camera, spawn_basic_scene))
+        .add_systems(Startup, spawn_camera)
+        //.add_system_set(SystemSet::on_enter(GameState::Gameplay).with_system(spawn_basic_scene))
+        .add_systems(OnEnter(GameState::Gameplay), spawn_basic_scene)
         .add_systems(Update, camera_controls)
         //.add_systems(Update, what_is_selected)
-        .add_plugins((TowerPlugin, TargetPlugin, BulletPlugin))
+        .add_plugins((TowerPlugin, TargetPlugin, BulletPlugin, MainMenuPlugin))
         .run();
 }
 
@@ -200,7 +205,7 @@ fn camera_controls(
     }
 }
 
-fn what_is_selected(selection: Query<(&Name, &PickSelection)>) {
+fn _what_is_selected(selection: Query<(&Name, &PickSelection)>) {
     for (name, selection) in &selection {
         //info!("{:?} is selected: {:?}", name, selection);
         if selection.is_selected {
@@ -209,5 +214,9 @@ fn what_is_selected(selection: Query<(&Name, &PickSelection)>) {
     }
 }
 
-
-
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash, States)]
+pub enum GameState {
+    #[default]
+    MainMenu,
+    Gameplay
+}

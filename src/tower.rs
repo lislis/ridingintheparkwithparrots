@@ -25,10 +25,10 @@ pub struct TowerPlugin;
 impl Plugin for TowerPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Tower>()
-        .add_systems(Update, tower_shooting)
+        .add_systems(Update, tower_shooting.run_if(in_state(GameState::Gameplay)))
         //.add_systems(Update, build_tower)
-        .add_systems(Update, create_ui_on_selection)
-        .add_systems(Update, tower_button_clicked);
+        .add_systems(Update, create_ui_on_selection.run_if(in_state(GameState::Gameplay)))
+        .add_systems(Update, tower_button_clicked.run_if(in_state(GameState::Gameplay)));
     }
 }
 
@@ -236,8 +236,8 @@ fn create_ui(
                     style: Style {
                         width: Val::Percent(15.0 * 9.0 / 16.0),
                         height: Val::Percent(15.0),
-                        align_self: AlignSelf::FlexStart,
-                        margin: UiRect::all(Val::Percent((2.0))),
+                        align_self: AlignSelf::FlexEnd,
+                        margin: UiRect::all(Val::Percent(2.0)),
                         ..default()
                     },
                     image: button_icons[i].clone().into(),

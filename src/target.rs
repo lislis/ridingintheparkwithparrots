@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::GameState;
+
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Target {
@@ -18,8 +20,8 @@ impl Plugin for TargetPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Target>()
         .register_type::<Health>()
-        .add_systems(Update, move_target)
-        .add_systems(Update, target_death);
+        .add_systems(Update, move_target.run_if(in_state(GameState::Gameplay)))
+        .add_systems(Update, target_death.run_if(in_state(GameState::Gameplay)));
     }
 }
 
