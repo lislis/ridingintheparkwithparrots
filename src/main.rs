@@ -6,9 +6,11 @@ use bevy_mod_picking::prelude::*;
 
 mod main_menu;
 mod player;
+mod parrot;
 
 pub use main_menu::*;
 pub use player::*;
+pub use parrot::*;
 
 pub const WIDTH: f32 = 1280.0;
 pub const HEIGHT: f32 = 720.0;
@@ -36,7 +38,7 @@ fn main() {
         .add_systems(OnEnter(GameState::Gameplay), spawn_basic_scene)
         .add_plugins(MainMenuPlugin)
         .add_plugins(PlayerPlugin)
-        //.add_plugins((TowerPlugin, TargetPlugin, BulletPlugin, MainMenuPlugin, PlayerPlugin))
+        .add_plugins(ParrotPlugin)
         .run();
 }
 
@@ -54,15 +56,15 @@ fn spawn_basic_scene(
         ..default()
     }, Name::new("Floor"));
 
-    let pointlight = (PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    }, Name::new("PointLight"));
+    // let pointlight = (PointLightBundle {
+    //     point_light: PointLight {
+    //         intensity: 1500.0,
+    //         shadows_enabled: true,
+    //         ..default()
+    //     },
+    //     transform: Transform::from_xyz(4.0, 8.0, 4.0),
+    //     ..default()
+    // }, Name::new("PointLight"));
 
     let dir_light = (DirectionalLightBundle {
         directional_light: DirectionalLight {
