@@ -15,11 +15,13 @@ mod bullet;
 mod target;
 mod tower;
 mod main_menu;
+mod new_player;
 
 pub use bullet::*;
 pub use target::*;
 pub use tower::*;
 pub use main_menu::*;
+pub use new_player::*;
 
 pub const WIDTH: f32 = 720.0;
 pub const HEIGHT: f32 = 1280.0;
@@ -54,7 +56,7 @@ fn main() {
         .add_systems(OnEnter(GameState::Gameplay), spawn_basic_scene)
         .add_systems(Update, camera_controls)
         //.add_systems(Update, what_is_selected)
-        .add_plugins((TowerPlugin, TargetPlugin, BulletPlugin, MainMenuPlugin))
+        .add_plugins((TowerPlugin, TargetPlugin, BulletPlugin, MainMenuPlugin, PlayerPlugin))
         .run();
 }
 

@@ -122,7 +122,7 @@ fn start_button_clicked(
 }
 
 fn quit_button_clicked(
-    mut commands: Commands,
+    _commands: Commands,
     interactions: Query<&Interaction, (With<QuitButton>, Changed<Interaction>)>,
     mut exit: EventWriter<AppExit>,
   ) {

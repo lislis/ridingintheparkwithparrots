@@ -14,12 +14,17 @@ pub struct Health {
     pub value: i32
 }
 
+
+#[derive(Event)]
+pub struct TargetDeathEvent;
+
 pub struct TargetPlugin;
 
 impl Plugin for TargetPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Target>()
         .register_type::<Health>()
+        .add_event::<TargetDeathEvent>()
         .add_systems(Update, move_target.run_if(in_state(GameState::Gameplay)))
         .add_systems(Update, target_death.run_if(in_state(GameState::Gameplay)));
     }
@@ -36,11 +41,13 @@ fn move_target(
 
 fn target_death(
     mut commands: Commands,
-    targets: Query<(Entity, &Health)>
+    targets: Query<(Entity, &Health)>,
+    mut death_event_writer: EventWriter<TargetDeathEvent>
 ) {
     for (ent, health) in &targets {
         if health.value <= 0 {
             commands.entity(ent).despawn_recursive();
+            death_event_writer.send(TargetDeathEvent);
         }
     }
 }
