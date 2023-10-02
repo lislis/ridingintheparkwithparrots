@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, reflect};
 use bevy_inspector_egui::InspectorOptions;
 use bevy_mod_picking::prelude::*;
 
@@ -20,6 +20,13 @@ pub enum TowerType {
 #[derive(Component)]
 pub struct TowerUIRoot;
 
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct TowerButtonState {
+    pub cost: u32,
+    pub affordable: bool,
+}
+
 pub struct TowerPlugin;
 
 impl Plugin for TowerPlugin {
@@ -28,7 +35,8 @@ impl Plugin for TowerPlugin {
         .add_systems(Update, tower_shooting.run_if(in_state(GameState::Gameplay)))
         //.add_systems(Update, build_tower)
         .add_systems(Update, create_ui_on_selection.run_if(in_state(GameState::Gameplay)))
-        .add_systems(Update, tower_button_clicked.run_if(in_state(GameState::Gameplay)));
+        .add_systems(Update, tower_button_clicked.run_if(in_state(GameState::Gameplay)))
+        .add_systems(Update, grey_tower_buttons.after(create_ui_on_selection).run_if(in_state(GameState::Gameplay)));
     }
 }
 
@@ -165,19 +173,24 @@ fn spawn_tower(
 }
 
 fn tower_button_clicked(
-    interaction: Query<(&Interaction, &TowerType), Changed<Interaction>>,
+    interaction: Query<(&Interaction, &TowerType, &TowerButtonState), Changed<Interaction>>,
     mut commands: Commands,
     selection: Query<(Entity, &PickSelection, &Transform)>,
+    mut player: Query<&mut Player>,
     assets: Res<GameAssets>,
 ) {
-    for (interaction, tower_type) in &interaction {
+    let mut player = player.single_mut();
+    for (interaction, tower_type, button_state) in &interaction {
         if matches!(interaction, Interaction::Pressed) {
             for (entity, selection, transform) in &selection {
                 if selection.is_selected {
-                    //Remove the base model/hitbox
-                    commands.entity(entity).despawn_recursive();
+                    if player.money >= button_state.cost {
+                        player.money -= button_state.cost;
+                        //Remove the base model/hitbox
+                        commands.entity(entity).despawn_recursive();
 
-                    spawn_tower(&mut commands, &assets, transform.translation, *tower_type);
+                        spawn_tower(&mut commands, &assets, transform.translation, *tower_type);
+                    }
                 }
             }
         }
@@ -216,7 +229,10 @@ fn create_ui(
       asset_server.load("potato_tower.png"),
       asset_server.load("cabbage_tower.png"),
     ];
+
     let towers = [TowerType::Tomato, TowerType::Potato, TowerType::Cabbage];
+    let costs = [50, 80, 110];
+
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -242,10 +258,30 @@ fn create_ui(
                     },
                     image: button_icons[i].clone().into(),
                     ..default()
+                },
+                TowerButtonState {
+                    cost: costs[i],
+                    affordable: false
                 }, 
                 towers[i]
                 )
             );
         }
     });
+}
+
+fn grey_tower_buttons(
+    mut buttons: Query<(&mut BackgroundColor, &mut TowerButtonState)>,
+    player: Query<&Player>,
+) {
+    let player = player.single();
+    for (mut tint, mut state) in &mut buttons {
+        if player.money >= state.cost {
+            state.affordable = true;
+            *tint = Color::WHITE.into();
+        } else {
+            state.affordable = false;
+            *tint = Color::DARK_GRAY.into();
+        }
+    }
 }

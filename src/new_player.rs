@@ -5,7 +5,8 @@ use crate::{GameState, TargetDeathEvent};
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Player  {
-    money: u32
+    pub money: u32,
+    pub health: u32,
 }
 
 pub struct PlayerPlugin;
@@ -19,7 +20,7 @@ impl Plugin for PlayerPlugin {
 }
 
 fn spawn_player(mut commands: Commands) {
-    commands.spawn((Player { money: 100 }, Name::new("Player")));
+    commands.spawn((Player { money: 100, health: 10 }, Name::new("Player")));
 }
 
 fn give_money_on_kill(

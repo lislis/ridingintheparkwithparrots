@@ -99,7 +99,7 @@ fn spawn_basic_scene(
             transform: Transform::from_xyz(-2.0, 0.2, 1.5),
             ..default()
         },
-        Target { speed: 0.3 },
+        Target { speed: 0.3, path_index: 0 },
         Health { value: 3 },
         Name::new("Dummy target1") );
 
@@ -109,7 +109,7 @@ fn spawn_basic_scene(
             transform: Transform::from_xyz(-4.0, 0.2, 1.5),
             ..default()
         },
-        Target { speed: 0.3 },
+        Target { speed: 0.3, path_index: 0 },
         Health { value: 3 },
         Name::new("Dummy target2") );
 
@@ -154,6 +154,7 @@ fn asset_loading(mut commands: Commands, assets: Res<AssetServer>) {
         potato_scene: assets.load("Potato.glb#Scene0"),
         cabbage_scene: assets.load("Cabbage.glb#Scene0"),
         target_scene: assets.load("Target.glb#Scene0"),
+        damage_sound: assets.load("damage.wav"),
     });
 }
 
@@ -166,7 +167,8 @@ pub struct GameAssets {
     tomato_scene: Handle<Scene>,
     potato_scene: Handle<Scene>,
     cabbage_scene: Handle<Scene>,
-    target_scene: Handle<Scene>
+    target_scene: Handle<Scene>,
+    damage_sound: Handle<AudioSource>
 }
 
 fn camera_controls(

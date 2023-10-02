@@ -110,13 +110,15 @@ fn start_button_clicked(
   mut commands: Commands,
   interactions: Query<&Interaction, (With<StartButton>, Changed<Interaction>)>,
   menu_root: Query<Entity, With<MenuUIRoot>>,
-  mut game_state: ResMut<NextState<GameState>>  
+  mut game_state: ResMut<NextState<GameState>>,
+  mut mouse_input: ResMut<Input<MouseButton>>,
 ) {
     for interaction in &interactions {
         if matches!(interaction, Interaction::Pressed) {
             let root_entity = menu_root.single();
             commands.entity(root_entity).despawn_recursive();
             game_state.set(GameState::Gameplay);
+            mouse_input.clear();
         }
     }
 }
