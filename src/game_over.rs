@@ -18,7 +18,8 @@ impl Plugin for GameOverPlugin {
 
 fn spawn_game_over(
     mut commands: Commands,
-    asset_server: Res<AssetServer>
+    asset_server: Res<AssetServer>,
+    parrots_q: Query<&Parrot>,
 ) {
     let main_menu_button = spawn_button(&mut commands, &asset_server, "Main menu", Color::LIME_GREEN);
     commands.entity(main_menu_button).insert(MainMenuButton);
@@ -46,7 +47,7 @@ fn spawn_game_over(
                     max_width: Val::Percent(70.0),                   
                     ..default()
                 },
-                text: Text::from_section("Your ride is over, with <> parrots left.", TextStyle {
+                text: Text::from_section(format!("Your ride is over, with {} parrots left.", parrots_q.iter().len()), TextStyle {
                     font: asset_server.load("fonts/Gorditas-Bold.ttf"),
                     font_size: 96.0,
                     color: Color::BLACK,

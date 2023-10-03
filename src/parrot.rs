@@ -29,6 +29,7 @@ impl Plugin for ParrotPlugin {
         .add_event::<DistressedParrotEvent>()
         .add_event::<RelaxedParrotEvent>()
         .add_systems(Update, distress_parrots.run_if(in_state(GameState::Gameplay)))
+        .add_systems(Update, relax_parrots.run_if(in_state(GameState::Gameplay)))
         .add_systems(Update, check_parrot_health.run_if(in_state(GameState::Gameplay)))
         .add_systems(Update, check_parrots_left.run_if(in_state(GameState::Gameplay)));
     }
@@ -42,7 +43,7 @@ fn distress_parrots(
     if !parrots_q.is_empty() {
         let max_parrots = parrots_q.iter().len();
         let mut who = 0;
-        
+
         if max_parrots != 1 {
             let mut rng = rng_q.single_mut();
             who = rng.gen_range(0..max_parrots) as usize;    
@@ -55,8 +56,19 @@ fn distress_parrots(
                 }
             }
         }
+    } 
+}
+
+fn relax_parrots(
+    mut parrots_q: Query<&mut Parrot>,
+    mut relaxed_events: EventReader<RelaxedParrotEvent>,
+) {
+    for _event in relaxed_events.iter() {
+        for (i, mut parrot) in &mut parrots_q.iter_mut().enumerate() {
+            parrot.is_distressed = false;
+            parrot.distress_timer.reset();
+        }
     }
-    
 }
 
 fn check_parrot_health(

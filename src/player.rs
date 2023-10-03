@@ -7,6 +7,10 @@ use rand::prelude::Rng;
 
 use crate::*;
 
+pub const PLAYER_SPEED: f32 = 1.0;
+pub const BALANCE_BASE: f32 = 90.0;
+pub const BALANCE_WIGGLE_ROOM: f32 = 3.0;
+
 #[derive(Resource)]
 pub struct PlayerPath {
     waypoints: Vec<Vec2>
@@ -27,6 +31,7 @@ pub struct Handlebar {
     pub prev_rotation: f32,
 }
 
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -34,7 +39,6 @@ impl Plugin for PlayerPlugin {
         app
         .register_type::<Player>()
         .register_type::<Handlebar>()
-        //.register_type::<PlayerInfo>()
         .insert_resource(PlayerPath {
             waypoints: vec![
                 Vec2::new(1.0, 1.0),
@@ -52,7 +56,7 @@ impl Plugin for PlayerPlugin {
         .add_systems(OnExit(GameState::Gameplay), despawn_player)
         .add_systems(Update, move_player.run_if(in_state(GameState::Gameplay)))
         .add_systems(Update, disrupt_player.run_if(in_state(GameState::Gameplay)))
-        .add_systems(Update, camera_controls.run_if(in_state(GameState::Gameplay)));
+        .add_systems(Update, handlebar_controls.run_if(in_state(GameState::Gameplay)));
     }
 }
 
@@ -71,7 +75,8 @@ fn disrupt_player(
     if player.disrupt_timer.just_finished() {
         // all the transformation stuff could be called on a custom event as well
         let mut rng = rng_q.single_mut();
-        let rand_val = rng.gen_range(-0.2f32..0.2f32);
+        let rand_range = 0.2f32;
+        let rand_val = rng.gen_range(-rand_range..rand_range);
 
         // first rotate back with old amount
         handle_transform.rotate_local_z(-handlebar.prev_rotation);
@@ -79,8 +84,9 @@ fn disrupt_player(
         handle_transform.rotate_local_z(rand_val);
         handlebar.prev_rotation = rand_val;
 
-        player.balance = map_range(rand_val, -0.2, 0.2, 0.0, 180.);
-        
+        let out_min = BALANCE_BASE - (BALANCE_BASE * 0.5);
+        let out_max = BALANCE_BASE + (BALANCE_BASE * 0.5);
+        player.balance = map_range(rand_val, -rand_range, rand_range, out_min, out_max);
         parrot_event_writer.send(DistressedParrotEvent);
     }
 }
@@ -89,42 +95,33 @@ fn map_range(num: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> 
     return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-fn camera_controls(
+fn handlebar_controls(
     keyboard: Res<Input<KeyCode>>,
-    mut parent_q: Query<(&mut Transform, &Player)>,
+    mut player_q: Query<&mut Player>,
+    mut handle_q: Query<(&mut Transform, &mut Handlebar)>,
     time: Res<Time>,
+    mut parrot_event_writer: EventWriter<RelaxedParrotEvent>
 ) {
-    let (mut transform, player) = parent_q.single_mut();
-    
-    let mut forward = transform.forward();
-    forward.y = 0.0;
-    forward = forward.normalize();
+    let mut player = player_q.single_mut();
+    info!("b {}", player.balance);
 
-    let mut left = transform.left();
-    left.y = 0.0;
-    left = left.normalize();
+    let (mut handle_transform, mut handlebar) = handle_q.single_mut();
 
-    let speed = player.speed;
-    let rotate_speed = 0.7;
-    
-    if keyboard.pressed(KeyCode::W) {
-        transform.translation += forward * time.delta_seconds() * speed;
-    }
-    if keyboard.pressed(KeyCode::S) {
-        transform.translation -= forward * time.delta_seconds() * speed;
-    }
+    let step = 30.0;
     if keyboard.pressed(KeyCode::A) {
-        transform.translation += left * time.delta_seconds() * speed;
+        player.balance += step * time.delta_seconds();
     }
     if keyboard.pressed(KeyCode::D) {
-        transform.translation -= left * time.delta_seconds() * speed;
+        player.balance -= step * time.delta_seconds();
     }
 
-    if keyboard.pressed(KeyCode::Q) {
-        transform.rotate_axis(Vec3::Y, rotate_speed * time.delta_seconds())
-    }
-    if keyboard.pressed(KeyCode::E) {
-        transform.rotate_axis(Vec3::Y, -rotate_speed * time.delta_seconds())
+    let lower_bound = BALANCE_BASE - BALANCE_WIGGLE_ROOM;
+    let upper_bound = BALANCE_BASE + BALANCE_WIGGLE_ROOM;
+    if player.balance > lower_bound && player.balance < upper_bound {
+        handle_transform.rotate_local_z(-handlebar.prev_rotation);
+        handle_transform.rotate_local_z(0.0);
+        handlebar.prev_rotation = 0.0;
+        parrot_event_writer.send(RelaxedParrotEvent);
     }
 }
 
@@ -138,9 +135,9 @@ fn spawn_player(
     let player = (
         SpatialBundle::from_transform(Transform::from_xyz(1.0, 1.0, 1.0)),
         Player {
-            balance: 90.0,
+            balance: BALANCE_BASE,
             path_index: 0,
-            speed: 0.5,
+            speed: PLAYER_SPEED,
             disrupt_timer: Timer::from_seconds(5.0, TimerMode::Repeating),
         },
         EntropyComponent::from(&mut rng),
@@ -235,7 +232,6 @@ fn move_player(
             player.path_index += 1;
         }
     } else {
-        info!("END OF GAME");
-        game_state.set(GameState::MainMenu);
+        game_state.set(GameState::GameOver);
     }
 }
