@@ -26,7 +26,7 @@ impl Plugin for MainMenuPlugin {
     }
 }
 
-fn spawn_menu_camera(mut commands: Commands) {
+pub fn spawn_menu_camera(mut commands: Commands) {
     let camera = (
         Camera3dBundle {
             transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -38,7 +38,7 @@ fn spawn_menu_camera(mut commands: Commands) {
     commands.spawn(camera);
 }
 
-fn despawn_menu_camera(
+pub fn despawn_menu_camera(
     mut commands: Commands,
     camera_q: Query<(Entity, &MenuCamera)>
 ) {
@@ -93,7 +93,7 @@ fn spawn_main_menu(
     .add_child(quit_button);
 }
 
-fn spawn_button(
+pub fn spawn_button(
     commands: &mut Commands,
     asset_server: &AssetServer,
     text: &str,

@@ -1,6 +1,10 @@
 use bevy::prelude::*;
 use bevy::math::Vec3Swizzles;
 
+use bevy_rand::prelude::*;
+use bevy_prng::ChaCha8Rng;
+use rand::prelude::Rng;
+
 use crate::*;
 
 #[derive(Resource)]
@@ -13,7 +17,14 @@ pub struct PlayerPath {
 pub struct Player {
     pub balance: f32,
     pub speed: f32,
-    pub path_index: usize
+    pub path_index: usize,
+    pub disrupt_timer: Timer
+}
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Handlebar {
+    pub prev_rotation: f32,
 }
 
 pub struct PlayerPlugin;
@@ -22,6 +33,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app
         .register_type::<Player>()
+        .register_type::<Handlebar>()
         //.register_type::<PlayerInfo>()
         .insert_resource(PlayerPath {
             waypoints: vec![
@@ -45,13 +57,36 @@ impl Plugin for PlayerPlugin {
 }
 
 fn disrupt_player(
-    mut commands: Commands,
+    mut _commands: Commands,
     mut player_q: Query<&mut Player>,
+    mut handle_q: Query<(&mut Transform, &mut Handlebar)>,
+    mut rng_q: Query<&mut EntropyComponent<ChaCha8Rng>>,
+    time: Res<Time>,
+    mut parrot_event_writer: EventWriter<DistressedParrotEvent>
 ) {
-    let mut player = player_q.single();
-    // @todo random value to throw off balance
-    // some kind of debounce or timer
-    info!("Balance is {:?}, ", player.balance);
+    let mut player = player_q.single_mut();
+    let (mut handle_transform, mut handlebar) = handle_q.single_mut();
+        
+    player.disrupt_timer.tick(time.delta());
+    if player.disrupt_timer.just_finished() {
+        // all the transformation stuff could be called on a custom event as well
+        let mut rng = rng_q.single_mut();
+        let rand_val = rng.gen_range(-0.2f32..0.2f32);
+
+        // first rotate back with old amount
+        handle_transform.rotate_local_z(-handlebar.prev_rotation);
+        // then roate with new amount
+        handle_transform.rotate_local_z(rand_val);
+        handlebar.prev_rotation = rand_val;
+
+        player.balance = map_range(rand_val, -0.2, 0.2, 0.0, 180.);
+        
+        parrot_event_writer.send(DistressedParrotEvent);
+    }
+}
+
+fn map_range(num: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+    return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 fn camera_controls(
@@ -98,14 +133,17 @@ fn spawn_player(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     _game_assets: Res<GameAssets>,
+    mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>
 ) {
     let player = (
         SpatialBundle::from_transform(Transform::from_xyz(1.0, 1.0, 1.0)),
         Player {
             balance: 90.0,
             path_index: 0,
-            speed: 1.0,
+            speed: 0.5,
+            disrupt_timer: Timer::from_seconds(5.0, TimerMode::Repeating),
         },
+        EntropyComponent::from(&mut rng),
         Name::new("Player")
     );
 
@@ -124,10 +162,11 @@ fn spawn_player(
             material: materials.add(Color::GRAY.into()),
             transform: Transform::from_xyz(0.0,-0.3, -1.0)
                 .with_rotation(Quat::from_rotation_z(1.57))
-                .with_scale(Vec3::new(0.1, 0.8, 0.1)),
+                .with_scale(Vec3::new(0.1, 0.9, 0.1)),
             ..default()
         }, 
         NotShadowCaster,
+        Handlebar { prev_rotation: 0.0 },
         Name::new("Handlebar")
     );
 
@@ -144,18 +183,20 @@ fn spawn_player(
                     mesh: meshes.add(shape::Capsule::default().into()),
                     material: materials.add(color.into()),
                     transform: Transform::from_xyz(xyz.0, xyz.1, xyz.2)
-                        .with_scale(Vec3::new(0.2, 0.2, 0.2)),
+                        .with_scale(Vec3::new(0.15, 0.15, 0.15)),
                     ..default()
                 },
                 Parrot {
                     health: 3,
+                    distress_timer: Timer::from_seconds(3.0, TimerMode::Repeating),
+                    is_distressed: false,
                 },
                 Name::new(name)
             )
         };
 
         for i in 0..=3 {
-            let x = -0.5 + (i as f32 * 0.3);
+            let x = -0.45 + (i as f32 * 0.3);
             commands.spawn(create_parrot(colors[i], (x, -0.2, -1.1), format!("Parrot_{}", i)));
         }
     });

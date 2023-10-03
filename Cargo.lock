@@ -924,10 +924,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_prng"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7c582b60877434d656fb4796f8fe6027639a7229afb7c6dfa35ca46c07fb1ee"
+dependencies = [
+ "bevy",
+ "rand_chacha",
+ "rand_core",
+ "rand_pcg",
+ "rand_xoshiro",
+ "serde",
+ "wyrand",
+]
+
+[[package]]
 name = "bevy_ptr"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "15702dff420fac72c2ab92428a8600e079ae89c5845401c4e39b843665a3d2d0"
+
+[[package]]
+name = "bevy_rand"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99b932ae3d94cf8bfaa402a3f5cf71d319b1f525666ecf83ac168b749f7da056"
+dependencies = [
+ "bevy",
+ "getrandom",
+ "rand_chacha",
+ "rand_core",
+ "serde",
+]
 
 [[package]]
 name = "bevy_reflect"
@@ -2971,6 +2999,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ppv-lite86"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
+
+[[package]]
 name = "pretty-type-name"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3015,6 +3049,58 @@ name = "radsort"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17fd96390ed3feda12e1dfe2645ed587e0bea749e319333f104a33ff62f77a0b"
+
+[[package]]
+name = "rand"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+dependencies = [
+ "libc",
+ "rand_chacha",
+ "rand_core",
+]
+
+[[package]]
+name = "rand_chacha"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
+dependencies = [
+ "ppv-lite86",
+ "rand_core",
+ "serde",
+]
+
+[[package]]
+name = "rand_core"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
+dependencies = [
+ "getrandom",
+ "serde",
+]
+
+[[package]]
+name = "rand_pcg"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59cad018caf63deb318e5a4586d99a24424a364f40f1e5778c29aca23f4fc73e"
+dependencies = [
+ "rand_core",
+ "serde",
+]
+
+[[package]]
+name = "rand_xoshiro"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f97cdb2a36ed4183de61b2f824cc45c9f1037f28afe0a322e9fff4c108b5aaa"
+dependencies = [
+ "rand_core",
+ "serde",
+]
 
 [[package]]
 name = "range-alloc"
@@ -3100,7 +3186,10 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_mod_picking",
+ "bevy_prng",
+ "bevy_rand",
  "bevy_third_person_camera",
+ "rand",
 ]
 
 [[package]]
@@ -4114,6 +4203,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c2e3184b9c4e92ad5167ca73039d0c42476302ab603e2fec4487511f38ccefc"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "wyrand"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f85f6e8ee46c4aa11bfb655815f738a8ef224d0f7eb86f7e142de8b64fc2205"
+dependencies = [
+ "rand_core",
+ "serde",
 ]
 
 [[package]]

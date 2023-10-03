@@ -1,14 +1,19 @@
-use std::f32::consts::PI;
-
 use bevy::{prelude::*, pbr::{NotShadowCaster, CascadeShadowConfigBuilder}};
 use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use bevy_mod_picking::prelude::*;
 
+use bevy_rand::prelude::*;
+use bevy_prng::ChaCha8Rng;
+
+use std::f32::consts::PI;
+
 mod main_menu;
+mod game_over;
 mod player;
 mod parrot;
 
 pub use main_menu::*;
+pub use game_over::*;
 pub use player::*;
 pub use parrot::*;
 
@@ -28,6 +33,7 @@ fn main() {
                 }),
                 ..default()
             }),
+            EntropyPlugin::<ChaCha8Rng>::default(),
             WorldInspectorPlugin::new()
         ))
         // .add_plugins(DefaultPickingPlugins
@@ -37,12 +43,11 @@ fn main() {
         .add_systems(PreStartup, asset_loading)
         .add_systems(OnEnter(GameState::Gameplay), spawn_basic_scene)
         .add_plugins(MainMenuPlugin)
+        .add_plugins(GameOverPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(ParrotPlugin)
         .run();
 }
-
-
 
 fn spawn_basic_scene(
     mut commands: Commands,
@@ -69,6 +74,7 @@ fn spawn_basic_scene(
     let dir_light = (DirectionalLightBundle {
         directional_light: DirectionalLight {
             shadows_enabled: true,
+            illuminance: 1000.0,
             ..default()
         },
         transform: Transform {
