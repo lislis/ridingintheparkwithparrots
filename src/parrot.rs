@@ -42,10 +42,25 @@ impl Plugin for ParrotPlugin {
         .add_event::<RelaxedParrotEvent>()
         .add_systems(Update, distress_parrots.run_if(in_state(GameState::Gameplay)))
         //.add_systems(Update, spawn_bangs.run_if(in_state(GameState::Gameplay)))
+        .add_systems(Update, update_parrot_sprites.run_if(in_state(GameState::Gameplay)))
         .add_systems(Update, despawn_bangs.run_if(in_state(GameState::Gameplay)))
         .add_systems(Update, relax_parrots.run_if(in_state(GameState::Gameplay)))
         .add_systems(Update, check_parrot_health.run_if(in_state(GameState::Gameplay)))
         .add_systems(Update, check_parrots_left.run_if(in_state(GameState::Gameplay)));
+    }
+}
+
+fn update_parrot_sprites(
+    mut _commands: Commands,
+    mut parrots_q: Query<(&Parrot, &mut AtlasSprite3dComponent)>
+) {
+    for (parrot, mut sprite) in parrots_q.iter_mut() {
+        match parrot.health {
+            4 => sprite.index = 0,
+            3 => sprite.index = 1,
+            2 => sprite.index = 2,
+            _ => sprite.index = 3,
+        }
     }
 }
 
@@ -119,7 +134,7 @@ fn relax_parrots(
     mut relaxed_events: EventReader<RelaxedParrotEvent>,
 ) {
     for _event in relaxed_events.iter() {
-        for (i, mut parrot) in &mut parrots_q.iter_mut().enumerate() {
+        for (_i, mut parrot) in &mut parrots_q.iter_mut().enumerate() {
             parrot.is_distressed = false;
             parrot.distress_timer.reset();
         }
@@ -148,7 +163,7 @@ fn check_parrot_health(
 
 fn check_parrots_left(
     mut _commands: Commands,
-    mut parrots_q: Query<&mut Parrot>,
+    parrots_q: Query<&Parrot>,
     mut game_state: ResMut<NextState<GameState>>,
 ) {
     if parrots_q.is_empty() {
@@ -157,20 +172,20 @@ fn check_parrots_left(
 }
 
 impl ParrotType {
-    fn get_parrot(&self, assets: &GameAssets) -> (Handle<Image>, Parrot) {
+    fn get_parrot(&self, assets: &GameAssets) -> (Handle<TextureAtlas>, Parrot) {
         match self {
             ParrotType::Blue => (
-                assets.parrot_blue_1.clone(),
+                assets.parrot_blue_atlas.clone(),
                 Parrot {
-                    health: 3,
+                    health: 4,
                     distress_timer: Timer::from_seconds(3.0, TimerMode::Repeating),
                     is_distressed: false,
                 }
             ),
             ParrotType::Red => (
-                assets.parrot_red_1.clone(),
+                assets.parrot_red_atlas.clone(),
                 Parrot {
-                    health: 3,
+                    health: 4,
                     distress_timer: Timer::from_seconds(3.0, TimerMode::Repeating),
                     is_distressed: false,
                 }
@@ -187,11 +202,12 @@ pub fn spawn_parrot(
     xyz: Vec3,
     parrot_type: ParrotType,
 ) -> Entity {
-    let (parrot_image, parrot) = parrot_type.get_parrot(assets);
+    let (atlas, parrot) = parrot_type.get_parrot(assets);
 
     commands.spawn((
-        Sprite3d {
-            image: parrot_image,
+        AtlasSprite3d {
+            atlas,
+            index: 0,
             pixels_per_metre: 400.,
             alpha_mode: AlphaMode::Blend,
             unlit: true,

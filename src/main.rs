@@ -92,10 +92,14 @@ pub struct GameAssets {
     handlebar_image: Handle<Image>,
     #[asset(path = "bang.png")]
     bang_image: Handle<Image>,
-    #[asset(path = "parrot_blue_1.png")]
-    parrot_blue_1: Handle<Image>,
-    #[asset(path = "parrot_red_1.png")]
-    parrot_red_1: Handle<Image>,
+    #[asset(texture_atlas(tile_size_x = 512., tile_size_y = 512.))]
+    #[asset(texture_atlas(columns = 4, rows = 1))]
+    #[asset(path = "parrot_blue_atlas.png")]
+    parrot_blue_atlas: Handle<TextureAtlas>,
+    #[asset(texture_atlas(tile_size_x = 512., tile_size_y = 512.))]
+    #[asset(texture_atlas(columns = 4, rows = 1))]
+    #[asset(path = "parrot_red_atlas.png")]
+    parrot_red_atlas: Handle<TextureAtlas>,
     #[asset(path = "rotation_indicator.png")]
     rotation_indicator: Handle<Image>,
     #[asset(path = "handle_indicator.png")]
