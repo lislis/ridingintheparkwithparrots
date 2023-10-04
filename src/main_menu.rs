@@ -33,7 +33,7 @@ pub fn spawn_menu_camera(mut commands: Commands) {
             ..default()
         },
         MenuCamera,
-        RaycastPickCamera::default()
+        //RaycastPickCamera::default()
     );
     commands.spawn(camera);
 }

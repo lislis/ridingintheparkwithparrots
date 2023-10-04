@@ -7,7 +7,7 @@ use rand::prelude::Rng;
 
 use crate::*;
 
-pub const PLAYER_SPEED: f32 = 1.0;
+pub const PLAYER_SPEED: f32 = 0.2;
 pub const BALANCE_BASE: f32 = 90.0;
 pub const BALANCE_WIGGLE_ROOM: f32 = 3.0;
 
@@ -66,7 +66,8 @@ fn disrupt_player(
     mut handle_q: Query<(&mut Transform, &mut Handlebar)>,
     mut rng_q: Query<&mut EntropyComponent<ChaCha8Rng>>,
     time: Res<Time>,
-    mut parrot_event_writer: EventWriter<DistressedParrotEvent>
+    mut parrot_event_writer: EventWriter<DistressedParrotEvent>,
+    mut sprite_params : Sprite3dParams
 ) {
     let mut player = player_q.single_mut();
     let (mut handle_transform, mut handlebar) = handle_q.single_mut();
@@ -127,10 +128,11 @@ fn handlebar_controls(
 
 fn spawn_player(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    _game_assets: Res<GameAssets>,
-    mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>
+    //mut meshes: ResMut<Assets<Mesh>>,
+    //mut materials: ResMut<Assets<StandardMaterial>>,
+    game_assets: Res<GameAssets>,
+    mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
+    mut sprite_params : Sprite3dParams,
 ) {
     let player = (
         SpatialBundle::from_transform(Transform::from_xyz(1.0, 1.0, 1.0)),
@@ -154,15 +156,15 @@ fn spawn_player(
     );
 
     let handlebar = (
-        PbrBundle {
-            mesh: meshes.add(shape::Cylinder::default().into()),
-            material: materials.add(Color::GRAY.into()),
-            transform: Transform::from_xyz(0.0,-0.3, -1.0)
-                .with_rotation(Quat::from_rotation_z(1.57))
-                .with_scale(Vec3::new(0.1, 0.9, 0.1)),
+        Sprite3d {
+            image:game_assets.handlebar_image.clone(),
+            pixels_per_metre: 400.,
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            transform: Transform::from_xyz(0., -0.3, -1.0)
+                .with_scale(Vec3::new(0.55, 0.45, 0.55)),
             ..default()
-        }, 
-        NotShadowCaster,
+            }.bundle(&mut sprite_params),
         Handlebar { prev_rotation: 0.0 },
         Name::new("Handlebar")
     );
@@ -173,16 +175,22 @@ fn spawn_player(
 
         // I'm not super fond of spawning parrots here
         // but I couldn't get push_children to work... so here we are
-        let colors = [Color::BLUE, Color::RED, Color::YELLOW_GREEN, Color::ORANGE];
+        let colors = [&game_assets.parrot_blue_1, 
+                                        &game_assets.parrot_red_1,
+                                        &game_assets.parrot_blue_1,
+                                        &game_assets.parrot_red_1,];
 
-        let mut create_parrot = |color: Color, xyz: (f32, f32, f32), name: String | -> (PbrBundle, Parrot, Name) {
-            (PbrBundle {
-                    mesh: meshes.add(shape::Capsule::default().into()),
-                    material: materials.add(color.into()),
+        let mut create_parrot = |color: &Handle<Image>, xyz: (f32, f32, f32), name: String | -> (Sprite3dBundle, Parrot, Name) {
+            (
+                Sprite3d {
+                    image: color.clone(),
+                    pixels_per_metre: 400.,
+                    alpha_mode: AlphaMode::Blend,
+                    unlit: true,
                     transform: Transform::from_xyz(xyz.0, xyz.1, xyz.2)
-                        .with_scale(Vec3::new(0.15, 0.15, 0.15)),
+                        .with_scale(Vec3::new(0.3, 0.3, 0.3)),
                     ..default()
-                },
+                    }.bundle(&mut sprite_params),
                 Parrot {
                     health: 3,
                     distress_timer: Timer::from_seconds(3.0, TimerMode::Repeating),
@@ -193,9 +201,28 @@ fn spawn_player(
         };
 
         for i in 0..=3 {
-            let x = -0.45 + (i as f32 * 0.3);
-            commands.spawn(create_parrot(colors[i], (x, -0.2, -1.1), format!("Parrot_{}", i)));
+            let x = -0.35 + (i as f32 * 0.25);
+            commands.spawn(create_parrot(&colors[i], (x, -0.1, -0.95), format!("Parrot_{}", i)));
         }
+
+        commands.spawn((Sprite3d {
+            image:game_assets.rotation_indicator.clone(),
+            pixels_per_metre: 200.,
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            transform: Transform::from_xyz(0., -0.24, -0.8)
+                .with_scale(Vec3::new(0.15, 0.15, 0.15)),
+            ..default()
+            }.bundle(&mut sprite_params), Name::new("Dashboard")));
+        commands.spawn((Sprite3d {
+            image:game_assets.handle_indicator.clone(),
+            pixels_per_metre: 200.,
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            transform: Transform::from_xyz(0., -0.24, -0.7)
+                .with_scale(Vec3::new(0.1, 0.1, 0.1)),
+            ..default()
+            }.bundle(&mut sprite_params), Name::new("Indicator")));
     });
 }
 

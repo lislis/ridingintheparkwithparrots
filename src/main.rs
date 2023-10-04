@@ -1,9 +1,9 @@
 use bevy::{prelude::*, pbr::{NotShadowCaster, CascadeShadowConfigBuilder}};
 use bevy_inspector_egui::{quick::WorldInspectorPlugin};
-use bevy_mod_picking::prelude::*;
-
+use bevy_sprite3d::*;
 use bevy_rand::prelude::*;
 use bevy_prng::ChaCha8Rng;
+use bevy_asset_loader::prelude::*;
 
 use std::f32::consts::PI;
 
@@ -22,7 +22,7 @@ pub const HEIGHT: f32 = 720.0;
 
 fn main() {
     App::new()
-        .add_plugins((
+        .add_plugins(
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Riding in the park with parrots".into(),
@@ -32,15 +32,17 @@ fn main() {
                     ..default()
                 }),
                 ..default()
-            }),
-            EntropyPlugin::<ChaCha8Rng>::default(),
-            WorldInspectorPlugin::new()
-        ))
-        // .add_plugins(DefaultPickingPlugins
-        //     .build()
-        //     .disable::<DebugPickingPlugin>())
+            })
+        )
         .add_state::<GameState>()
-        .add_systems(PreStartup, asset_loading)
+        .add_loading_state(
+            LoadingState::new(GameState::Loading)
+                .continue_to_state(GameState::Gameplay)
+        )
+        .add_collection_to_loading_state::<_, GameAssets>(GameState::Loading)
+        .add_plugins(Sprite3dPlugin)
+        .add_plugins(EntropyPlugin::<ChaCha8Rng>::default(),)
+        .add_plugins(WorldInspectorPlugin::new())
         .add_systems(OnEnter(GameState::Gameplay), spawn_basic_scene)
         .add_plugins(MainMenuPlugin)
         .add_plugins(GameOverPlugin)
@@ -61,16 +63,6 @@ fn spawn_basic_scene(
         ..default()
     }, Name::new("Floor"));
 
-    // let pointlight = (PointLightBundle {
-    //     point_light: PointLight {
-    //         intensity: 1500.0,
-    //         shadows_enabled: true,
-    //         ..default()
-    //     },
-    //     transform: Transform::from_xyz(4.0, 8.0, 4.0),
-    //     ..default()
-    // }, Name::new("PointLight"));
-
     let dir_light = (DirectionalLightBundle {
         directional_light: DirectionalLight {
             shadows_enabled: true,
@@ -90,54 +82,32 @@ fn spawn_basic_scene(
         ..default()
     }, Name::new("DirectionalLight"));
 
-    // TOWER 
-    // let default_collider_color = materials.add(Color::rgba(0.3, 0.5, 0.3, 0.3).into());
-    // let selected_collider_color = materials.add(Color::rgba(0.3, 0.9, 0.3, 0.9).into());
-    
-    // commands.spawn((
-    //     SpatialBundle::from_transform(Transform::from_xyz(0.0, 0.8, 0.0)),
-    //     meshes.add(shape::Capsule::default().into()),
-    //     Highlight {
-    //         hovered: Some(HighlightKind::Fixed(selected_collider_color.clone())),
-    //         pressed: Some(HighlightKind::Fixed(selected_collider_color.clone())),
-    //         selected: Some(HighlightKind::Fixed(selected_collider_color))
-    //     },
-    //     default_collider_color,
-    //     NotShadowCaster,
-    //     PickableBundle::default(),
-    //     RaycastPickTarget::default(),
-    //     Name::new("Tower_Base"),
-    // )).with_children(|commands| {
-    //     commands.spawn((SceneBundle {
-    //         scene: game_assets.tower_base_scene.clone(),
-    //         transform: Transform::from_xyz(0.0, -0.8, 0.0),
-    //         ..default()
-    //     }, PickableBundle::default()));
-    // });
-
-    //commands.spawn(pointlight);
     commands.spawn(dir_light);
     commands.spawn(floor);
 }
 
-fn asset_loading(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.insert_resource(GameAssets {
-        // tower_base_scene: assets.load("TowerBase.glb#Scene0"),
-        // damage_sound: assets.load("damage.wav"),
-    });
-}
-
-#[derive(Resource)]
+#[derive(AssetCollection, Resource)]
 pub struct GameAssets {
-    // tower_base_scene: Handle<Scene>,
-    // damage_sound: Handle<AudioSource>
+    #[asset(path = "handlebar.png")]
+    handlebar_image: Handle<Image>,
+    #[asset(path = "bang.png")]
+    bang_image: Handle<Image>,
+    #[asset(path = "parrot_blue_1.png")]
+    parrot_blue_1: Handle<Image>,
+    #[asset(path = "parrot_red_1.png")]
+    parrot_red_1: Handle<Image>,
+    #[asset(path = "rotation_indicator.png")]
+    rotation_indicator: Handle<Image>,
+    #[asset(path = "handle_indicator.png")]
+    handle_indicator: Handle<Image>,
 }
 
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash, States)]
 pub enum GameState {
-    MainMenu,
     #[default]
+    Loading,
+    MainMenu,
     Gameplay,
     GameOver,
 }

@@ -7,7 +7,9 @@
 
 ## Bevy tutorials
 
-- Bevy tutorial
+- Bevy examples
+
+- The cheatbook
 
 - Bevy 3d Third Person Tutorial
     https://www.youtube.com/watch?v=CblngP9nKQw
@@ -19,3 +21,5 @@
 
 ## Blender and Bevy
 
+- Blender to Bevy: components editing & export workflow + tooling !
+    https://www.youtube.com/watch?v=-lcScjQCA3c
