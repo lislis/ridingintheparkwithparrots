@@ -128,13 +128,63 @@ fn handlebar_controls(
 
 fn spawn_player(
     mut commands: Commands,
-    //mut meshes: ResMut<Assets<Mesh>>,
-    //mut materials: ResMut<Assets<StandardMaterial>>,
     game_assets: Res<GameAssets>,
     mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
     mut sprite_params : Sprite3dParams,
 ) {
-    let player = (
+    let camera_player_id = commands.spawn((
+        Camera3dBundle {
+            transform: Transform::from_xyz(0.0, 0.0, 0.0)
+                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+            ..default()
+        },
+        Name::new("PlayerCam")
+    )).id();
+
+    let handlebar_id = commands.spawn((
+        Sprite3d {
+            image:game_assets.handlebar_image.clone(),
+            pixels_per_metre: 500.,
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            transform: Transform::from_xyz(0., -0.3, -1.0)
+                .with_scale(Vec3::new(0.55, 0.45, 0.55)),
+            ..default()
+            }.bundle(&mut sprite_params),
+        Handlebar { prev_rotation: 0.0 },
+        Name::new("Handlebar")
+    )).with_children(|commands| {
+        // this selection could be randomized
+        let colors = [ParrotType::Blue, ParrotType::Red, ParrotType::Blue,ParrotType::Red];
+        for i in 0..=3 {
+            let x = -0.6 + (i as f32 * 0.40);
+            let xyz = Vec3::new(x, 0.5, 0.05);
+            spawn_parrot(commands, &game_assets, &mut sprite_params, xyz, colors[i]);
+        }
+    })
+    .id();
+
+    let dash_id = commands.spawn((Sprite3d {
+        image:game_assets.rotation_indicator.clone(),
+        pixels_per_metre: 200.,
+        alpha_mode: AlphaMode::Blend,
+        unlit: true,
+        transform: Transform::from_xyz(0., -0.24, -0.8)
+            .with_scale(Vec3::new(0.15, 0.15, 0.15)),
+        ..default()
+        }.bundle(&mut sprite_params), Name::new("Dashboard"))).id();
+
+    let indicator_id = commands.spawn((Sprite3d {
+        image:game_assets.handle_indicator.clone(),
+        pixels_per_metre: 200.,
+        alpha_mode: AlphaMode::Blend,
+        unlit: true,
+        transform: Transform::from_xyz(0., -0.24, -0.7)
+            .with_scale(Vec3::new(0.1, 0.1, 0.1)),
+        ..default()
+        }.bundle(&mut sprite_params), Name::new("Indicator"))).id();
+
+    let mut player = commands.spawn((
         SpatialBundle::from_transform(Transform::from_xyz(1.0, 1.0, 1.0)),
         Player {
             balance: BALANCE_BASE,
@@ -144,86 +194,8 @@ fn spawn_player(
         },
         EntropyComponent::from(&mut rng),
         Name::new("Player")
-    );
-
-    let camera_player = (
-        Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 0.0, 0.0)
-                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
-            ..default()
-        },
-        Name::new("PlayerCam")
-    );
-
-    let handlebar = (
-        Sprite3d {
-            image:game_assets.handlebar_image.clone(),
-            pixels_per_metre: 400.,
-            alpha_mode: AlphaMode::Blend,
-            unlit: true,
-            transform: Transform::from_xyz(0., -0.3, -1.0)
-                .with_scale(Vec3::new(0.55, 0.45, 0.55)),
-            ..default()
-            }.bundle(&mut sprite_params),
-        Handlebar { prev_rotation: 0.0 },
-        Name::new("Handlebar")
-    );
-
-    commands.spawn(player).with_children(|commands| {
-        commands.spawn(camera_player);
-        commands.spawn(handlebar);
-
-        // I'm not super fond of spawning parrots here
-        // but I couldn't get push_children to work... so here we are
-        let colors = [&game_assets.parrot_blue_1, 
-                                        &game_assets.parrot_red_1,
-                                        &game_assets.parrot_blue_1,
-                                        &game_assets.parrot_red_1,];
-
-        let mut create_parrot = |color: &Handle<Image>, xyz: (f32, f32, f32), name: String | -> (Sprite3dBundle, Parrot, Name) {
-            (
-                Sprite3d {
-                    image: color.clone(),
-                    pixels_per_metre: 400.,
-                    alpha_mode: AlphaMode::Blend,
-                    unlit: true,
-                    transform: Transform::from_xyz(xyz.0, xyz.1, xyz.2)
-                        .with_scale(Vec3::new(0.3, 0.3, 0.3)),
-                    ..default()
-                    }.bundle(&mut sprite_params),
-                Parrot {
-                    health: 3,
-                    distress_timer: Timer::from_seconds(3.0, TimerMode::Repeating),
-                    is_distressed: false,
-                },
-                Name::new(name)
-            )
-        };
-
-        for i in 0..=3 {
-            let x = -0.35 + (i as f32 * 0.25);
-            commands.spawn(create_parrot(&colors[i], (x, -0.1, -0.95), format!("Parrot_{}", i)));
-        }
-
-        commands.spawn((Sprite3d {
-            image:game_assets.rotation_indicator.clone(),
-            pixels_per_metre: 200.,
-            alpha_mode: AlphaMode::Blend,
-            unlit: true,
-            transform: Transform::from_xyz(0., -0.24, -0.8)
-                .with_scale(Vec3::new(0.15, 0.15, 0.15)),
-            ..default()
-            }.bundle(&mut sprite_params), Name::new("Dashboard")));
-        commands.spawn((Sprite3d {
-            image:game_assets.handle_indicator.clone(),
-            pixels_per_metre: 200.,
-            alpha_mode: AlphaMode::Blend,
-            unlit: true,
-            transform: Transform::from_xyz(0., -0.24, -0.7)
-                .with_scale(Vec3::new(0.1, 0.1, 0.1)),
-            ..default()
-            }.bundle(&mut sprite_params), Name::new("Indicator")));
-    });
+    ));
+    player.push_children(&[camera_player_id, handlebar_id, dash_id, indicator_id]);
 }
 
 fn despawn_player(
