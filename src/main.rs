@@ -58,7 +58,7 @@ fn spawn_basic_scene(
     _game_assets: Res<GameAssets>,
 ) {
     let floor = (PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane::from_size(15.0))),
+        mesh: meshes.add(Mesh::from(shape::Plane::from_size(30.0))),
         material: materials.add(Color::YELLOW_GREEN.into()),
         ..default()
     }, Name::new("Floor"));
@@ -66,7 +66,7 @@ fn spawn_basic_scene(
     let dir_light = (DirectionalLightBundle {
         directional_light: DirectionalLight {
             shadows_enabled: true,
-            illuminance: 1000.0,
+            illuminance: 5000.0,
             ..default()
         },
         transform: Transform {

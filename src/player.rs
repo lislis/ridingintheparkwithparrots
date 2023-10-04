@@ -7,7 +7,7 @@ use rand::prelude::Rng;
 
 use crate::*;
 
-pub const PLAYER_SPEED: f32 = 0.2;
+pub const PLAYER_SPEED: f32 = 0.8;
 pub const BALANCE_BASE: f32 = 90.0;
 pub const BALANCE_WIGGLE_ROOM: f32 = 3.0;
 
@@ -158,7 +158,8 @@ fn spawn_player(
         let colors = [ParrotType::Blue, ParrotType::Red, ParrotType::Blue,ParrotType::Red];
         for i in 0..=3 {
             let x = -0.6 + (i as f32 * 0.40);
-            let xyz = Vec3::new(x, 0.5, 0.05);
+            let z = 0.01 + (i as f32 * 0.01);
+            let xyz = Vec3::new(x, 0.5, z);
             spawn_parrot(commands, &game_assets, &mut sprite_params, xyz, colors[i]);
         }
     })

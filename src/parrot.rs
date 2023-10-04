@@ -5,6 +5,8 @@ use rand::prelude::Rng;
 
 use crate::*;
 
+pub const PARROT_HEALTH: usize = 4;
+pub const PARROT_TIMER: f32 = 3.0;
 
 #[derive(InspectorOptions, Component, Clone, Copy, Debug)]
 pub enum ParrotType {
@@ -59,7 +61,8 @@ fn update_parrot_sprites(
             4 => sprite.index = 0,
             3 => sprite.index = 1,
             2 => sprite.index = 2,
-            _ => sprite.index = 3,
+            1 => sprite.index = 3,
+            _ => sprite.index = 0, // if health is adjusted without more atlas entries
         }
     }
 }
@@ -177,16 +180,16 @@ impl ParrotType {
             ParrotType::Blue => (
                 assets.parrot_blue_atlas.clone(),
                 Parrot {
-                    health: 4,
-                    distress_timer: Timer::from_seconds(3.0, TimerMode::Repeating),
+                    health: PARROT_HEALTH,
+                    distress_timer: Timer::from_seconds(PARROT_TIMER, TimerMode::Repeating),
                     is_distressed: false,
                 }
             ),
             ParrotType::Red => (
                 assets.parrot_red_atlas.clone(),
                 Parrot {
-                    health: 4,
-                    distress_timer: Timer::from_seconds(3.0, TimerMode::Repeating),
+                    health: PARROT_HEALTH,
+                    distress_timer: Timer::from_seconds(PARROT_TIMER, TimerMode::Repeating),
                     is_distressed: false,
                 }
             ),
