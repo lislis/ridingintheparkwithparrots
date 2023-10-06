@@ -1,9 +1,10 @@
-use bevy::{prelude::*, pbr::{NotShadowCaster, CascadeShadowConfigBuilder}};
+use bevy::{prelude::*, pbr::{NotShadowCaster, CascadeShadowConfigBuilder}, reflect::erased_serde::{Serialize, deserialize}};
 use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use bevy_sprite3d::*;
 use bevy_rand::prelude::*;
 use bevy_prng::ChaCha8Rng;
 use bevy_asset_loader::prelude::*;
+use bevy_mod_reqwest::*;
 
 use std::f32::consts::PI;
 
@@ -11,11 +12,13 @@ mod main_menu;
 mod game_over;
 mod player;
 mod parrot;
+mod controller;
 
 pub use main_menu::*;
 pub use game_over::*;
 pub use player::*;
 pub use parrot::*;
+pub use controller::*;
 
 pub const WIDTH: f32 = 1280.0;
 pub const HEIGHT: f32 = 720.0;
@@ -40,6 +43,7 @@ fn main() {
                 .continue_to_state(GameState::Gameplay)
         )
         .add_collection_to_loading_state::<_, GameAssets>(GameState::Loading)
+        .add_plugins(ReqwestPlugin)
         .add_plugins(Sprite3dPlugin)
         .add_plugins(EntropyPlugin::<ChaCha8Rng>::default(),)
         .add_plugins(WorldInspectorPlugin::new())
@@ -48,8 +52,10 @@ fn main() {
         .add_plugins(GameOverPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(ParrotPlugin)
+        .add_plugins(ControllerPlugin)
         .run();
 }
+
 
 fn spawn_basic_scene(
     mut commands: Commands,

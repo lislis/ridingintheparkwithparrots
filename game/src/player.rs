@@ -31,6 +31,9 @@ pub struct Handlebar {
     pub prev_rotation: f32,
 }
 
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Indicator;
 
 pub struct PlayerPlugin;
 
@@ -56,7 +59,8 @@ impl Plugin for PlayerPlugin {
         .add_systems(OnExit(GameState::Gameplay), despawn_player)
         .add_systems(Update, move_player.run_if(in_state(GameState::Gameplay)))
         .add_systems(Update, disrupt_player.run_if(in_state(GameState::Gameplay)))
-        .add_systems(Update, handlebar_controls.run_if(in_state(GameState::Gameplay)));
+        //.add_systems(Update, handlebar_controls.run_if(in_state(GameState::Gameplay)));
+        .add_systems(Update, controller_events.run_if(in_state(GameState::Gameplay)));
     }
 }
 
@@ -67,7 +71,7 @@ fn disrupt_player(
     mut rng_q: Query<&mut EntropyComponent<ChaCha8Rng>>,
     time: Res<Time>,
     mut parrot_event_writer: EventWriter<DistressedParrotEvent>,
-    mut sprite_params : Sprite3dParams
+    //mut sprite_params : Sprite3dParams
 ) {
     let mut player = player_q.single_mut();
     let (mut handle_transform, mut handlebar) = handle_q.single_mut();
@@ -96,19 +100,21 @@ fn map_range(num: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> 
     return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-fn handlebar_controls(
+// keyboard based approach
+fn _handlebar_controls(
     keyboard: Res<Input<KeyCode>>,
     mut player_q: Query<&mut Player>,
-    mut handle_q: Query<(&mut Transform, &mut Handlebar)>,
+    mut handle_q: Query<(&mut Transform, &mut Handlebar), Without<Indicator>>,
     time: Res<Time>,
+    measurement_q: Query<&Measurement>,
     mut parrot_event_writer: EventWriter<RelaxedParrotEvent>
 ) {
     let mut player = player_q.single_mut();
-    info!("b {}", player.balance);
-
+    //info!("b {}", player.balance);
     let (mut handle_transform, mut handlebar) = handle_q.single_mut();
 
     let step = 30.0;
+    
     if keyboard.pressed(KeyCode::A) {
         player.balance += step * time.delta_seconds();
     }
@@ -124,6 +130,43 @@ fn handlebar_controls(
         handlebar.prev_rotation = 0.0;
         parrot_event_writer.send(RelaxedParrotEvent);
     }
+}
+
+// events from polling
+fn controller_events(
+    mut player_q: Query<&mut Player>,
+    mut handle_q: Query<(&mut Transform, &mut Handlebar), Without<Indicator>>,
+    mut indicator_q: Query<&mut Transform, With<Indicator>>,
+    mut measure_events: EventReader<MeasureEvent>
+) {
+    let mut player = player_q.single_mut();
+    //info!("b {}", player.balance);
+
+    let mut indicator_transform = indicator_q.single_mut();
+    let (mut handle_transform, mut handlebar) = handle_q.single_mut();
+
+    for event in measure_events.iter() {
+        let step = 30.0;
+
+        match event {
+            MeasureEvent::Left => {
+                player.balance += step;
+                indicator_transform.rotate_local_z(PI);
+            },
+            MeasureEvent::Right => {
+                player.balance -= step;
+                indicator_transform.rotate_local_z(-PI);
+            }
+        }
+    
+        let lower_bound = BALANCE_BASE - BALANCE_WIGGLE_ROOM;
+        let upper_bound = BALANCE_BASE + BALANCE_WIGGLE_ROOM;
+        if player.balance > lower_bound && player.balance < upper_bound {
+            handle_transform.rotate_local_z(-handlebar.prev_rotation);
+            handle_transform.rotate_local_z(0.0);
+            handlebar.prev_rotation = 0.0;
+        }
+    }    
 }
 
 fn spawn_player(
@@ -183,7 +226,9 @@ fn spawn_player(
         transform: Transform::from_xyz(0., -0.24, -0.7)
             .with_scale(Vec3::new(0.1, 0.1, 0.1)),
         ..default()
-        }.bundle(&mut sprite_params), Name::new("Indicator"))).id();
+        }.bundle(&mut sprite_params),
+        Indicator,
+        Name::new("Indicator"))).id();
 
     let mut player = commands.spawn((
         SpatialBundle::from_transform(Transform::from_xyz(1.0, 1.0, 1.0)),
