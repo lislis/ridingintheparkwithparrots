@@ -14,8 +14,8 @@ bool left, right;
 
 WebServer server ( 80 );
 
-const char* ssid     = "PelicanTown";
-const char* password = "visitstardewvalleyin2018";
+const char* ssid     = "...";
+const char* password = "...";
 
 void handleRoot() { 
   //server.send( 200, "application/json", getPayload() ); 
