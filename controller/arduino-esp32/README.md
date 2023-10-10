@@ -1,5 +1,7 @@
 # Controller
 
+This is super simple code that reads from the sensor and only writes the gyro's Y value to serial. That's where the game pick's it up!
+
 ## Components used
 
 - small breadboard (optional if you connect wires directly)
@@ -18,10 +20,3 @@
 | SCL | D22 |
 | SDA | D21 |
 
-## Variables
-
-The esp32 needs to log into a wifi to make its measurements available for the game to read.
-
-Therefore you need to adjust the `ssid` and `password` variables in the code.
-
-Then flash it on the board!
