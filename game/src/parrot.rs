@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
-use bevy::math::Vec3Swizzles;
 use rand::prelude::Rng;
 
 use crate::*;

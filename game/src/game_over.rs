@@ -1,5 +1,3 @@
-use bevy::{prelude::*, app::AppExit};
-
 use crate::*;
 
 #[derive(Component)]

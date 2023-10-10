@@ -1,91 +1,85 @@
-use bevy::prelude::*;
-use bevy_inspector_egui::InspectorOptions;
-use bevy::math::Vec3Swizzles;
-use rand::prelude::Rng;
-
 use crate::*;
 
-pub const CONTROLLER_IP: &str = "http://192.168.178.147/";
+pub const SERIAL_PORT: &str = "/dev/ttyUSB0";
+
+#[derive(PartialEq, Debug, Reflect)]
+pub enum Dir {
+    Left,
+    Right,
+    Neutral
+}
+
+impl Default for Dir {
+    fn default() -> Self {Self::Neutral}
+}
+
+#[derive(Debug, PartialEq, Component, Default, Reflect)]
+#[reflect(Component)]
+pub struct Movement {
+    pub value: f32,
+    pub direction: Dir,
+    //moving_back: bool
+}
+
 
 pub struct ControllerPlugin;
 
 impl Plugin for ControllerPlugin {
     fn build(&self, app: &mut App) {
         app
-        .register_type::<Measurement>()
-        .add_event::<MeasureEvent>()
-        .add_systems(OnEnter(GameState::Loading), init_measurements)
-        .add_systems(Update, poll_measurements.run_if(in_state(GameState::Gameplay)))
-        .add_systems(Update, handle_measurements.run_if(in_state(GameState::Gameplay)));
+        .register_type::<Movement>()
+        .add_plugins(SerialPlugin::new(SERIAL_PORT, 115200))
+        .add_systems(OnEnter(GameState::Gameplay), init_movement)
+        .add_systems(OnExit(GameState::Gameplay), rm_movement)
+        .add_systems(Update, read_serial.run_if(in_state(GameState::Gameplay)));
     }
 }
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-pub struct Measurement {
-    pub request_timer: Timer,
-    //pub current: f32
-}
-
-#[derive(Event)]
-pub enum MeasureEvent {
-    Left,
-    Right,
-    None,
-}
-
-fn init_measurements(
-    mut commands: Commands,
-) {
-    commands.spawn(Measurement { 
-        request_timer: Timer::from_seconds(0.2, TimerMode::Repeating),
-        //current: 0.0
-    });
-}
-
-fn poll_measurements(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut measure_q: Query<&mut Measurement>,
-) {
-    if let Ok(mut measurement) = measure_q.get_single_mut() {
-        measurement.request_timer.tick(time.delta());
-
-        if measurement.request_timer.just_finished() {
-            if let Ok(url) = CONTROLLER_IP.try_into() {
-                let req = reqwest::Request::new(reqwest::Method::GET, url);
-                let req = ReqwestRequest::new(req);
-                commands.spawn(req);
-            }
+impl Movement {
+    fn new() -> Self {
+        Self {
+            value: 0.0,
+            direction: Dir::Neutral,
         }
-    } 
+    }
+    fn update(&mut self, value: f32) {
+        self.value = value;
+        let new_direction = match value {
+            x if x < -0.1 => Dir::Right,
+            x if x > 0.1 => Dir::Left,
+            _ => Dir::Neutral
+        };
+        
+        self.direction = new_direction;
+    }
 }
 
-fn handle_measurements(
+fn init_movement(mut commands: Commands) {
+    commands.spawn((
+        Movement::new(),
+        Name::new("Movement")
+    ));
+}
+
+fn rm_movement(
     mut commands: Commands, 
-    //mut measure_q: Query<&mut Measurement>,
-    results: Query<(Entity, &ReqwestBytesResult)>,
-    mut measurement_event_writer: EventWriter<MeasureEvent>
+    movement_q: Query<(Entity, &Movement)>
 ) {
-    //if let Ok(mut measurement) = measure_q.get_single_mut() {
-        for (e, res) in results.iter() {
-            let string = res.as_str().unwrap();
-            // let measurements = string.split(",")
-            //     .map(|x| x.parse::<f32>().unwrap_or_else(|_| 0.0))
-            //     .collect::<Vec<f32>>();
-            info!("{:?}", string);
+    let (entity, _movement) = movement_q.single();
+    commands.entity(entity).despawn_recursive();
+}
 
-            match string {
-                "left" => measurement_event_writer.send(MeasureEvent::Left),
-                "right" => measurement_event_writer.send(MeasureEvent::Right),
-                _ => measurement_event_writer.send(MeasureEvent::None)
-            }
-
-            //bevy::log::info!("{} - {} - {}", x, y, z);
-            //measurement.current = measurements[1];
-            //measurement_event_writer.send(MeasureEvent { value: measurements[1] });
-            commands.entity(e).despawn_recursive();
-        }
-   // }
-    
+fn read_serial(
+    mut ev_serial: EventReader<SerialReadEvent>,
+    mut movement_q: Query<&mut Movement>,
+) {
+    let mut movement = movement_q.single_mut();
+    // you can get label of the port and received data buffer from `SerialReadEvent`
+    for SerialReadEvent(_label, buffer) in ev_serial.iter() {
+        let s = String::from_utf8(buffer.clone()).unwrap();
+        
+        let new_val = s.trim().parse::<f32>().unwrap_or_default();
+        //println!("received packet from {label}: {s}, ({new_val})");
+        movement.update(new_val);
+    }
 }

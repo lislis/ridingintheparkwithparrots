@@ -1,10 +1,11 @@
-use bevy::{prelude::*, pbr::{NotShadowCaster, CascadeShadowConfigBuilder}, reflect::erased_serde::{Serialize, deserialize}};
+use bevy::{prelude::*, pbr::{CascadeShadowConfigBuilder}};
 use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use bevy_sprite3d::*;
 use bevy_rand::prelude::*;
 use bevy_prng::ChaCha8Rng;
 use bevy_asset_loader::prelude::*;
 use bevy_mod_reqwest::*;
+use bevy_serial::{SerialPlugin, SerialReadEvent};
 
 use std::f32::consts::PI;
 
@@ -40,7 +41,7 @@ fn main() {
         .add_state::<GameState>()
         .add_loading_state(
             LoadingState::new(GameState::Loading)
-                .continue_to_state(GameState::Gameplay)
+                .continue_to_state(GameState::MainMenu)
         )
         .add_collection_to_loading_state::<_, GameAssets>(GameState::Loading)
         .add_plugins(ReqwestPlugin)
