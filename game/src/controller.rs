@@ -1,6 +1,7 @@
 use crate::*;
 
 pub const SERIAL_PORT: &str = "/dev/ttyUSB0";
+//pub const SERIAL_PORT: &str = "/dev/ttyACM0";
 
 #[derive(PartialEq, Debug, Reflect)]
 pub enum Dir {
@@ -75,7 +76,7 @@ fn read_serial(
 ) {
     let mut movement = movement_q.single_mut();
     // you can get label of the port and received data buffer from `SerialReadEvent`
-    for SerialReadEvent(_label, buffer) in ev_serial.iter() {
+    for SerialReadEvent(label, buffer) in ev_serial.iter() {
         let s = String::from_utf8(buffer.clone()).unwrap();
         
         let new_val = s.trim().parse::<f32>().unwrap_or_default();
