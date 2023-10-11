@@ -1,7 +1,8 @@
 use crate::*;
 
-pub const SERIAL_PORT: &str = "/dev/ttyUSB0";
+//pub const SERIAL_PORT: &str = "/dev/ttyUSB0";
 //pub const SERIAL_PORT: &str = "/dev/ttyACM0";
+pub const SERIAL_PORT: &str = "/dev/cu.usbserial-0001";
 
 #[derive(PartialEq, Debug, Reflect)]
 pub enum Dir {
@@ -32,7 +33,8 @@ impl Plugin for ControllerPlugin {
         .add_plugins(SerialPlugin::new(SERIAL_PORT, 115200))
         .add_systems(OnEnter(GameState::Gameplay), init_movement)
         .add_systems(OnExit(GameState::Gameplay), rm_movement)
-        .add_systems(Update, read_serial.run_if(in_state(GameState::Gameplay)));
+        .add_systems(Update, read_serial.run_if(in_state(GameState::Gameplay)))
+        ;
     }
 }
 

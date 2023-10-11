@@ -167,8 +167,10 @@ fn check_parrots_left(
     mut _commands: Commands,
     parrots_q: Query<&Parrot>,
     mut game_state: ResMut<NextState<GameState>>,
+    mut game_over_event_writer: EventWriter<GameOverEvent>
 ) {
     if parrots_q.is_empty() {
+        game_over_event_writer.send(GameOverEvent(0));
         game_state.set(GameState::GameOver);
     }
 }

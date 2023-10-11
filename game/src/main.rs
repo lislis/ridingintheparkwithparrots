@@ -3,6 +3,7 @@ use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use bevy_sprite3d::*;
 use bevy_rand::prelude::*;
 use bevy_prng::ChaCha8Rng;
+use rand::prelude::Rng;
 use bevy_asset_loader::prelude::*;
 use bevy_mod_reqwest::*;
 use bevy_serial::{SerialPlugin, SerialReadEvent};
@@ -14,12 +15,16 @@ mod game_over;
 mod player;
 mod parrot;
 mod controller;
+mod level;
+mod score;
 
-pub use main_menu::*;
-pub use game_over::*;
 pub use player::*;
 pub use parrot::*;
 pub use controller::*;
+pub use level::*;
+pub use main_menu::*;
+pub use game_over::*;
+pub use score::*;
 
 pub const WIDTH: f32 = 1280.0;
 pub const HEIGHT: f32 = 720.0;
@@ -47,50 +52,15 @@ fn main() {
         .add_plugins(ReqwestPlugin)
         .add_plugins(Sprite3dPlugin)
         .add_plugins(EntropyPlugin::<ChaCha8Rng>::default(),)
-        .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(OnEnter(GameState::Gameplay), spawn_basic_scene)
+        //.add_plugins(WorldInspectorPlugin::new())
         .add_plugins(MainMenuPlugin)
         .add_plugins(GameOverPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(ParrotPlugin)
         .add_plugins(ControllerPlugin)
+        .add_plugins(LevelPlugin)
+        .add_plugins(ScorePlugin)
         .run();
-}
-
-
-fn spawn_basic_scene(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    _game_assets: Res<GameAssets>,
-) {
-    let floor = (PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane::from_size(30.0))),
-        material: materials.add(Color::YELLOW_GREEN.into()),
-        ..default()
-    }, Name::new("Floor"));
-
-    let dir_light = (DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            shadows_enabled: true,
-            illuminance: 5000.0,
-            ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0.0, 4.0, 0.5),
-            rotation: Quat::from_rotation_x(-PI / 4.),
-            ..default()
-        },
-        cascade_shadow_config: CascadeShadowConfigBuilder {
-            first_cascade_far_bound: 4.0,
-            maximum_distance: 10.0,
-            ..default()
-        }.into(),
-        ..default()
-    }, Name::new("DirectionalLight"));
-
-    commands.spawn(dir_light);
-    commands.spawn(floor);
 }
 
 #[derive(AssetCollection, Resource)]

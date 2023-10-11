@@ -1,10 +1,6 @@
 use bevy::prelude::*;
 use bevy::math::Vec3Swizzles;
 
-use bevy_rand::prelude::*;
-use bevy_prng::ChaCha8Rng;
-use rand::prelude::Rng;
-
 use crate::*;
 
 pub const PLAYER_SPEED: f32 = 0.8;
@@ -214,7 +210,7 @@ fn spawn_player(
         Name::new("Indicator"))).id();
 
     let mut player = commands.spawn((
-        SpatialBundle::from_transform(Transform::from_xyz(1.0, 1.0, 1.0)),
+        SpatialBundle::from_transform(Transform::from_xyz(1.0, 0.5, 1.0)),
         Player {
             balance: BALANCE_BASE,
             path_index: 0,
@@ -240,7 +236,9 @@ fn move_player(
     path: Res<PlayerPath>,
     mut player_q: Query<(&mut Transform, &mut Player)>,
     mut game_state: ResMut<NextState<GameState>>,
-    time: Res<Time>
+    time: Res<Time>,
+    parrots_q: Query<&Parrot>,
+    mut game_over_event_writer: EventWriter<GameOverEvent>
 ) {
     let (mut transform, mut player) = player_q.single_mut();
 
@@ -260,6 +258,8 @@ fn move_player(
             player.path_index += 1;
         }
     } else {
+        let parrots = parrots_q.iter().len();
+        game_over_event_writer.send(GameOverEvent(parrots));
         game_state.set(GameState::GameOver);
     }
 }

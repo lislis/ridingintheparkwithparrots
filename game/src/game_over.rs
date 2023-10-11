@@ -5,9 +5,14 @@ pub struct MainMenuButton;
 
 pub struct GameOverPlugin;
 
+#[derive(Event)]
+pub struct GameOverEvent(pub usize);
+
 impl Plugin for GameOverPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::GameOver), spawn_menu_camera)
+        app
+            .add_event::<GameOverEvent>()
+            .add_systems(OnEnter(GameState::GameOver), spawn_menu_camera)
             .add_systems(OnEnter(GameState::GameOver), spawn_game_over)
             .add_systems(OnExit(GameState::GameOver), despawn_menu_camera)
             .add_systems(Update, main_menu_button_clicked.run_if(in_state(GameState::GameOver)));
@@ -17,10 +22,17 @@ impl Plugin for GameOverPlugin {
 fn spawn_game_over(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    parrots_q: Query<&Parrot>,
+    score_q: Query<&Score>,
 ) {
     let main_menu_button = spawn_button(&mut commands, &asset_server, "Main menu", Color::LIME_GREEN);
     commands.entity(main_menu_button).insert(MainMenuButton);
+
+    let mut score;
+    if let Ok(_score) = score_q.get_single() {
+        score = _score.history.last().unwrap_or_else(|| &0);
+    } else {
+        score = &0;
+    }
 
     commands.spawn((
         NodeBundle {
@@ -45,7 +57,7 @@ fn spawn_game_over(
                     max_width: Val::Percent(70.0),                   
                     ..default()
                 },
-                text: Text::from_section(format!("Your ride is over, with {} parrots left.", parrots_q.iter().len()), TextStyle {
+                text: Text::from_section(format!("Your ride is over, with {} parrots left.", score), TextStyle {
                     font: asset_server.load("fonts/Gorditas-Bold.ttf"),
                     font_size: 96.0,
                     color: Color::BLACK,
