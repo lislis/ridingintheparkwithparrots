@@ -29,11 +29,11 @@ fn add_score(
     }
 }
 
-fn setup_score(
-    mut commands: Commands
-) {
-    commands.spawn((Score {
-        history: vec!(),
-    }, Name::new("Score")));
+fn setup_score(mut commands: Commands, mut score_q: Query<&mut Score>) {
+    if let Ok(mut score) = score_q.get_single_mut() {
+        score.history.clear();
+    } else {
+        commands.spawn((Score { history: vec![] }, Name::new("Score")));
+    }
 }
 
